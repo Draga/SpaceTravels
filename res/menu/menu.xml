@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/resume"
+          android:icon="@drawable/menu_resume"
+          android:title="@string/menu_resume"
+          android:visible="false"
+          android:orderInCategory="0" />
+    <item android:id="@+id/restart"
+          android:icon="@drawable/menu_restart"
+          android:title="@string/menu_restart"
+          android:visible="true"
+          android:orderInCategory="1" />
+    <item android:id="@+id/exit"
+          android:icon="@drawable/menu_exit"
+          android:title="@string/menu_exit"
+          android:visible="true"
+          android:orderInCategory="2" />
+</menu>
