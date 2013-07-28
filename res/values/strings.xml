@@ -1,22 +1,24 @@
 <resources>
 
-    <string name="app_name">Ball</string>
+    <string name="app_name">Space Travels</string>
     <string name="mode_lose">LOSE</string>
     <string name="mode_win">WIN</string>
     <string name="mode_pause">Pause</string>
     <string name="mode_ready">Bring the ship home</string>
-    
+
     <string name="menu_pause">Pause</string>
     <string name="menu_restart">Restart</string>
     <string name="menu_exit">Exit</string>
     <string name="menu_resume">Resume</string>
-    
+
     <string name="message_stopped">Stopped</string>
     <string name="empty_text"></string>
     <string name="title">Space Travels</string>
     <string name="playButton">Play</string>
-    
+
     <string name="level_prompt">Choose a level</string>
+    <string name="lost_blackHole">You have been caught by a black hole!</string>
+    <string name="lost_lostShip">You have lost the ship!</string>
     <string-array name="levels_array">
         <item>Level 1</item>
         <item>Level 2</item>

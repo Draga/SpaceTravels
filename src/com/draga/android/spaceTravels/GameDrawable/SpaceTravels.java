@@ -1,4 +1,4 @@
-package com.draga.android.spaceTravels;
+package com.draga.android.spaceTravels.GameDrawable;
 
 import android.app.Activity;
 import android.content.Context;
@@ -10,36 +10,41 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.WindowManager;
 import android.widget.TextView;
+import com.draga.android.spaceTravels.R;
+import com.draga.android.spaceTravels.SpaceTravelsGame;
+import com.draga.android.spaceTravels.SpaceTravelsThread;
 
-public class SpaceTravels extends Activity {    
+public class SpaceTravels extends Activity {
     private WakeLock wakeLock;
     private static PowerManager powerManager;
-    
+
     private SpaceTravelsGame spaceTravelsGame;
     private SpaceTravelsThread thread;
-    
+
     private Menu menu;
-    
-    /** Called when the activity is first created. */
+
+    /**
+     * Called when the activity is first created.
+     */
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        
+
         // tell system to use the layout defined in our XML file
         setContentView(R.layout.game);
         spaceTravelsGame = (SpaceTravelsGame) findViewById(R.id.spaceTravelsGame);
         thread = spaceTravelsGame.getThread();
 
         // give the LunarView a handle to the TextView used for messages
-        spaceTravelsGame.setTextView((TextView) findViewById(R.id.text));
-        
-		// Get an instance of the PowerManager
+        //spaceTravelsGame.setTextView((TextView) findViewById(R.id.text));
+
+        // Get an instance of the PowerManager
         powerManager = (PowerManager) this.getSystemService(Context.POWER_SERVICE);
         // Create a bright wake lock
-        wakeLock = powerManager.newWakeLock(PowerManager.SCREEN_BRIGHT_WAKE_LOCK, getClass()
+        wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, getClass()
                 .getName());
-        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, 
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
                 WindowManager.LayoutParams.FLAG_FULLSCREEN);
-                
+
         // get handles to the BallView from XML, and its BallThread
         /*mBallView = (BallGame) findViewById(R.id.ball);
         mBallThread = mBallView.getThread();
@@ -57,25 +62,19 @@ public class SpaceTravels extends Activity {
             Log.w(this.getClass().getName(), "SIS is nonnull");
         }
         mBallThread.doStart();*/
-        
+
         thread.doStart();
     }
 
-    /**
-     * Invoked during init to give the Activity a chance to set up its Menu.
-     * 
-     * @param menu the Menu to which entries may be added
-     * @return true
-     */
     @Override
     public boolean onCreateOptionsMenu(Menu _menu) {
         super.onCreateOptionsMenu(_menu);
 
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.menu, _menu);
-        
+
         menu = _menu;
-        
+
         /*menu.add(0, MENU_PAUSE, 0, R.string.menu_pause);
         menu.add(0, MENU_RESTART, 1, R.string.menu_restart);
         menu.add(0, MENU_EXIT, 2, R.string.menu_exit);*/
@@ -85,7 +84,7 @@ public class SpaceTravels extends Activity {
 
     /**
      * Invoked when the user selects an item from the Menu.
-     * 
+     *
      * @param item the Menu entry which was selected
      * @return true if the Menu item was legit (and we consumed it), false
      *         otherwise
@@ -97,43 +96,44 @@ public class SpaceTravels extends Activity {
                 thread.doStart();
                 return true;
             case R.id.exit:
-            	//thread.setState(SpaceTravelsThread.STATE_LOSE,
+                //thread.setState(SpaceTravelsThread.STATE_LOSE,
                 //        getText(R.string.message_stopped));
-            	//startActivity(new Intent(SpaceTravels.this, SpaceTravelsMain.class));
+                //startActivity(new Intent(SpaceTravels.this, SpaceTravelsMain.class));
                 finish();
                 return true;
             case R.id.resume:
-            	thread.unpause();
+                thread.unpause();
                 return true;
         }
         return false;
     }
-    
+
     @Override
-    public boolean onPrepareOptionsMenu (Menu menu) {
-    	if (thread.getGameState() != SpaceTravelsThread.STATE_LOSE)
-    		menu.findItem(R.id.resume).setVisible(true);
-    	else
-    		menu.findItem(R.id.resume).setVisible(false);
-		return true;
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        if (thread.getGameState() != SpaceTravelsThread.STATE_LOSE)
+            menu.findItem(R.id.resume).setVisible(true);
+        else
+            menu.findItem(R.id.resume).setVisible(false);
+        return true;
     }
 
 
-	@Override
-	protected void onDestroy() {
-		super.onDestroy();
-	}
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+    }
 
-	@Override
-	protected void onStop() {
-		super.onStop();
-	}
+    @Override
+    protected void onStop() {
+        super.onStop();
+    }
 
-	@Override
-	protected void onResume() {
-		super.onResume();
+    @Override
+    protected void onResume() {
+        super.onResume();
         wakeLock.acquire();
-	}
+    }
+
     /**
      * Invoked when the Activity loses user focus.
      */
@@ -147,7 +147,7 @@ public class SpaceTravels extends Activity {
     /**
      * Notification that something is about to happen, to give the Activity a
      * chance to save state.
-     * 
+     *
      * @param outState a Bundle into which this Activity should save its state
      */
     /*@Override

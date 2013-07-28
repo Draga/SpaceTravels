@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package com.draga.android.spaceTravels;
 
@@ -14,15 +14,10 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.os.SystemClock;
-import android.view.Display;
-import android.view.Surface;
-import android.view.SurfaceHolder;
-import android.view.View;
-import android.view.WindowManager;
+import android.view.*;
 
 /**
  * @author Draga
- *
  */
 public class SpaceTravelsThread extends Thread implements SensorEventListener {
     /*
@@ -40,71 +35,71 @@ public class SpaceTravelsThread extends Thread implements SensorEventListener {
     public static final int STATE_RUNNING = 5;
     public static final int STATE_WIN = 6;
     public static final int STATE_ANIMANTING_LANDING = 7;
-	/*
-	 * Game graphics constants
-	 */
-	private final static int MAX_FPS = 50;// desired fps
-	private final static int MAX_FRAME_SKIPS = 10;// maximum number of frames to be skipped
-	private final static int FRAME_PERIOD = 1000 / MAX_FPS; // the frame period
-	/*
-	 * Sensor variables
-	 */
+    /*
+     * Game graphics constants
+     */
+    private final static int MAX_FPS = 50;// desired fps
+    private final static int MAX_FRAME_SKIPS = 10;// maximum number of frames to be skipped
+    private final static int FRAME_PERIOD = 1000 / MAX_FPS; // the frame period
+    /*
+     * Sensor variables
+     */
     private static Sensor sensor;
     private static SensorManager sensorManager;
-    private double sensorX;
-    private double sensorY;
-    private int sensorAccuracy;
     /*
      * other handlers
      */
     private static WindowManager windowManager;
-    private Display display;
-    private Canvas canvas;
-    
-	/*
-	 * Parameters to be received in the constructor
-	 */
-    private SurfaceHolder surfaceHolder;
     private static Handler handler;
     private static Context context;
-    
+    private double sensorX;
+    private double sensorY;
+    private int sensorAccuracy;
+    private Display display;
+    private Canvas canvas;
+    /*
+     * Parameters to be received in the constructor
+     */
+    private SurfaceHolder surfaceHolder;
     private SpaceTravelsGame spaceTravelsGame;
 
     /**
-	 * Current difficulty -- amount of fuel, allowed angle, etc. Default is
-	 * MEDIUM.
-	 */
-	//private int difficulty;
-    
-    /** The state of the game. One of READY, RUNNING, PAUSE, LOSE, or WIN */
+     * Current difficulty -- amount of fuel, allowed angle, etc. Default is
+     * MEDIUM.
+     */
+    //private int difficulty;
+    /**
+     * The state of the game. One of READY, RUNNING, PAUSE, LOSE, or WIN
+     */
     private int state;
-
-    /** Indicate whether the surface has been created & is ready to draw */
+    /**
+     * Indicate whether the surface has been created & is ready to draw
+     */
     private boolean running = false;
-    
-    /** Store the starting time to calculate the total playing time */
+    /**
+     * Store the starting time to calculate the total playing time
+     */
     private long gameStartTime;
-    
     private long lastUpdate = 0;
     private double elapsed;
-    
-    public SpaceTravelsThread (SurfaceHolder _surfaceHolder, SpaceTravelsGame _ballGame,
-    		Context _context, Handler _handler)  {
-    	super();
+
+    public SpaceTravelsThread(SurfaceHolder _surfaceHolder, SpaceTravelsGame _ballGame,
+                              Context _context, Handler _handler) {
+        super();
         surfaceHolder = _surfaceHolder;
         handler = _handler;
         //context = _context;
         spaceTravelsGame = _ballGame;
         context = _context;
-        
+
         //register sensor listener
 
-		// Get an instance of the SensorManager
+        // Get an instance of the SensorManager
         sensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
         sensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-		sensorManager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_GAME);
+        sensorManager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_GAME);
 
-		// Get an instance of the WindowManager
+        // Get an instance of the WindowManager
         windowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
         display = windowManager.getDefaultDisplay();
     }
@@ -114,21 +109,21 @@ public class SpaceTravelsThread extends Thread implements SensorEventListener {
      * Passing true allows the thread to run; passing false will shut it
      * down if it's already running. Calling start() after this was most
      * recently called with false will result in an immediate shutdown.
-     * 
-     * @param b true to run, false to shut down
+     *
+     * @param running true to run, false to shut down
      */
-    public void setRunning(boolean _running) {
-        running = _running;
+    public void setRunning(boolean running) {
+        this.running = running;
     }
-    
+
     /*
      * Starts the game, setting parameters for the current difficulty.
      */
     public void doStart() {
         synchronized (surfaceHolder) {
-        	spaceTravelsGame.init();
-        	gameStartTime = SystemClock.uptimeMillis();
-        	setState(STATE_RUNNING);
+            spaceTravelsGame.init();
+            gameStartTime = SystemClock.uptimeMillis();
+            setState(STATE_RUNNING);
         }
     }
 
@@ -145,35 +140,35 @@ public class SpaceTravelsThread extends Thread implements SensorEventListener {
      * Restores game state from the indicated Bundle. Typically called when
      * the Activity is being restored after having been previously
      * destroyed.
-     * 
+     *
      * @param savedState Bundle containing the game state
      */
     public synchronized void restoreState(Bundle savedState) {
         synchronized (surfaceHolder) {
-            setState(STATE_PAUSE);
+            setState(STATE_RUNNING);
             /*mDifficulty = savedState.getInt(KEY_DIFFICULTY);*/
         }
     }
 
     @Override
     public void run() {
-	    long beginTime;     // the time when the cycle begun
-	    long timeDiff;      // the time it took for the cycle to execute
-	    int sleepTime;      // ms to sleep (<0 if we're behind)
-	    int framesSkipped;  // number of frames being skipped
-		sleepTime = 0;
-		gameStartTime = SystemClock.uptimeMillis();
-		
+        long beginTime;     // the time when the cycle begun
+        long timeDiff;      // the time it took for the cycle to execute
+        int sleepTime;      // ms to sleep (<0 if we're behind)
+        int framesSkipped;  // number of frames being skipped
+        sleepTime = 0;
+        gameStartTime = SystemClock.uptimeMillis();
+
         while (running) {
             canvas = null;
             try {
-            	canvas = this.surfaceHolder.lockCanvas();
+                canvas = this.surfaceHolder.lockCanvas();
                 synchronized (surfaceHolder) {
                     beginTime = SystemClock.uptimeMillis();
                     if (lastUpdate == 0)
-                    	elapsed = 0;
+                        elapsed = 0;
                     else {
-                    	elapsed = SystemClock.uptimeMillis();
+                        elapsed = SystemClock.uptimeMillis();
                         elapsed -= lastUpdate;
                         elapsed /= 1000;
                     }
@@ -184,31 +179,31 @@ public class SpaceTravelsThread extends Thread implements SensorEventListener {
                     // calculate how long did the cycle take
                     timeDiff = SystemClock.uptimeMillis() - beginTime;
                     // calculate sleep time
-                    sleepTime = (int)(FRAME_PERIOD - timeDiff);
+                    sleepTime = (int) (FRAME_PERIOD - timeDiff);
 
                     if (sleepTime > 0) {
-	                    // if sleepTime > 0 we're OK
-	                    try {
-	                        // send the thread to sleep for a short period
-	                        // very useful for battery saving
-	                        Thread.sleep(sleepTime);
-	                    } catch (InterruptedException e) {}
-	                }
-	 
-	                while (sleepTime < 0 && framesSkipped < MAX_FRAME_SKIPS) {
-	                    // we need to catch up
-	                    // update without rendering
-	                    spaceTravelsGame.update(getGameState(), elapsed);
-	                    // add frame period to check if in next frame
-	                    sleepTime += FRAME_PERIOD;
-	                    framesSkipped++;
-	                }
+                        // if sleepTime > 0 we're OK
+                        try {
+                            // send the thread to sleep for a short period
+                            // very useful for battery saving
+                            Thread.sleep(sleepTime);
+                        } catch (InterruptedException e) {
+                        }
+                    }
+
+                    while (sleepTime < 0 && framesSkipped < MAX_FRAME_SKIPS) {
+                        // we need to catch up
+                        // update without rendering
+//                        spaceTravelsGame.update(getGameState(), elapsed);
+                        // add frame period to check if in next frame
+                        sleepTime += FRAME_PERIOD;
+                        framesSkipped++;
+                    }
                 }
-            }
-            catch (Exception e) {
-    		}
-            finally {
-            	// do this in a finally so that if an exception is thrown
+            } catch (Exception e) {
+                System.err.print(e.getMessage());
+            } finally {
+                // do this in a finally so that if an exception is thrown
                 // during the above, we don't leave the Surface in an
                 // inconsistent state
                 if (canvas != null) {
@@ -221,7 +216,7 @@ public class SpaceTravelsThread extends Thread implements SensorEventListener {
     /**
      * Dump game state to the provided Bundle. Typically called when the
      * Activity is being suspended.
-     * 
+     *
      * @return Bundle with this view's state
      */
     public Bundle saveState(Bundle map) {
@@ -236,9 +231,9 @@ public class SpaceTravelsThread extends Thread implements SensorEventListener {
     /**
      * Sets the game mode. That is, whether we are running, paused, in the
      * failure state, in the victory state, etc.
-     * 
-     * @see #setState(int, CharSequence)
+     *
      * @param mode one of the STATE_* constants
+     * @see #setState(int, CharSequence)
      */
     public void setState(int mode) {
         synchronized (surfaceHolder) {
@@ -249,8 +244,8 @@ public class SpaceTravelsThread extends Thread implements SensorEventListener {
     /**
      * Sets the game mode. That is, whether we are running, paused, in the
      * failure state, in the victory state, etc.
-     * 
-     * @param state one of the STATE_* constants
+     *
+     * @param _state  one of the STATE_* constants
      * @param message string to add to screen or null
      */
     public void setState(int _state, CharSequence message) {
@@ -274,26 +269,26 @@ public class SpaceTravelsThread extends Thread implements SensorEventListener {
             } else {
                 Resources res = context.getResources();
                 CharSequence str = "";
-                switch (state){
-                	case STATE_READY:
-	                    str = res.getText(R.string.mode_ready);
-	                    break;
-	                case STATE_PAUSE:
-	                    str = res.getText(R.string.mode_pause);
-	                    break;
-                	case STATE_LOSE:
-	                    str = res.getText(R.string.mode_lose);
-	                    break;
-	                case STATE_WIN:
-	                	double gameTime = SystemClock.uptimeMillis();
-	                			gameTime -= gameStartTime;
-	                	gameTime /= 1000;
-	                    str = res.getString(R.string.mode_win) + "\n"
-	                    	+ "Time: " + gameTime
-	                    	+ " sec";
-	                    break;
-	                default:
-	                    	break;
+                switch (state) {
+                    case STATE_READY:
+                        str = res.getText(R.string.mode_ready);
+                        break;
+                    case STATE_PAUSE:
+                        str = res.getText(R.string.mode_pause);
+                        break;
+                    case STATE_LOSE:
+                        str = res.getText(R.string.mode_lose);
+                        break;
+                    case STATE_WIN:
+                        double gameTime = SystemClock.uptimeMillis();
+                        gameTime -= gameStartTime;
+                        gameTime /= 1000;
+                        str = res.getString(R.string.mode_win) + "\n"
+                                + "Time: " + gameTime
+                                + " sec";
+                        break;
+                    default:
+                        break;
                 }
 
                 if (message != null) {
@@ -325,17 +320,17 @@ public class SpaceTravelsThread extends Thread implements SensorEventListener {
      */
     public void unpause() {
         synchronized (surfaceHolder) {
-        	setState(STATE_RUNNING);
+            setState(STATE_RUNNING);
         }
     }
-    
-	public void onAccuracyChanged(Sensor sensor, int accuracy) {
-		if (sensor.getType() == Sensor.TYPE_ACCELEROMETER)
-			sensorAccuracy = accuracy;
-		return;
-	}
 
-	public void onSensorChanged(SensorEvent event) {
+    public void onAccuracyChanged(Sensor sensor, int accuracy) {
+        if (sensor.getType() == Sensor.TYPE_ACCELEROMETER)
+            sensorAccuracy = accuracy;
+        return;
+    }
+
+    public void onSensorChanged(SensorEvent event) {
         if (event.sensor.getType() != Sensor.TYPE_ACCELEROMETER)
             return;
         /*
@@ -347,48 +342,48 @@ public class SpaceTravelsThread extends Thread implements SensorEventListener {
          * to with the screen in its native orientation).
          */
         switch (display.getRotation()) {
-        case Surface.ROTATION_0:
-            sensorX = event.values[0];
-            sensorY = event.values[1];
-            break;
-        case Surface.ROTATION_90:
-            sensorX = -event.values[1];
-            sensorY = event.values[0];
-            break;
-        case Surface.ROTATION_180:
-            sensorX = -event.values[0];
-            sensorY = -event.values[1];
-            break;
-        case Surface.ROTATION_270:
-            sensorX = event.values[1];
-            sensorY = -event.values[0];
-            break;
-        }        
-	}
+            case Surface.ROTATION_0:
+                sensorX = event.values[0];
+                sensorY = event.values[1];
+                break;
+            case Surface.ROTATION_90:
+                sensorX = event.values[1];
+                sensorY = event.values[0];
+                break;
+            case Surface.ROTATION_180:
+                sensorX = -event.values[0];
+                sensorY = -event.values[1];
+                break;
+            case Surface.ROTATION_270:
+                sensorX = event.values[1];
+                sensorY = -event.values[0];
+                break;
+        }
+    }
 
-	/**
-	 * @return the sensorX
-	 */
-	public double getSensorX() {
-		return sensorX;
-	}
+    /**
+     * @return the sensorX
+     */
+    public double getSensorX() {
+        return sensorX;
+    }
 
-	/**
-	 * @return the sensorY
-	 */
-	public double getSensorY() {
-		return sensorY;
-	}
+    /**
+     * @return the sensorY
+     */
+    public double getSensorY() {
+        return sensorY;
+    }
 
-	public int getSensorAccuracy() {
-		return sensorAccuracy;
-	}
+    public int getSensorAccuracy() {
+        return sensorAccuracy;
+    }
 
-	/**
-	 * @return the state
-	 */
-	public int getGameState() {
-		return state;
-	}
+    /**
+     * @return the state
+     */
+    public int getGameState() {
+        return state;
+    }
 }
 

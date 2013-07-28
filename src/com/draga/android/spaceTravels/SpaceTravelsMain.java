@@ -13,6 +13,7 @@ import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.Spinner;
+import com.draga.android.spaceTravels.GameDrawable.SpaceTravels;
 
 /**
  * @author Draga
