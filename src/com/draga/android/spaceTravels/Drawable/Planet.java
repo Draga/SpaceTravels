@@ -1,9 +1,9 @@
-package com.draga.android.spaceTravels.GameDrawable;
+package com.draga.android.spaceTravels.Drawable;
 
 import android.graphics.drawable.Drawable;
-import com.draga.android.spaceTravels.TwoD;
+import com.draga.android.spaceTravels.Vector2d;
 
-public class Planet extends GameDrawable{
+public class Planet extends GameDrawable {
     public double gravForce;
     public PlanetsName name;
 
@@ -11,7 +11,7 @@ public class Planet extends GameDrawable{
         Earth, Mars, Jupiter, Venus;
     }
 
-    public Planet(TwoD position, Drawable image) {
+    public Planet(Vector2d position, Drawable image) {
         super(position, image);
     }
 

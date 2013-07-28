@@ -1,8 +1,8 @@
-package com.draga.android.spaceTravels.GameDrawable.Overlay;
+package com.draga.android.spaceTravels.Drawable.Overlay;
 
 import android.graphics.drawable.Drawable;
-import com.draga.android.spaceTravels.GameDrawable.GameDrawable;
-import com.draga.android.spaceTravels.TwoD;
+import com.draga.android.spaceTravels.Drawable.GameDrawable;
+import com.draga.android.spaceTravels.Vector2d;
 
 /**
  * Created with IntelliJ IDEA.
@@ -12,7 +12,7 @@ import com.draga.android.spaceTravels.TwoD;
  * To change this template use File | Settings | File Templates.
  */
 public class GameGradientDrawable extends GameDrawable {
-    public GameGradientDrawable(TwoD position, Drawable image) {
+    public GameGradientDrawable(Vector2d position, Drawable image) {
         super(position, image);
     }
 }

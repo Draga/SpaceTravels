@@ -1,25 +1,25 @@
 package com.draga.android.spaceTravels;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.res.Resources;
-import android.content.res.XmlResourceParser;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
-import android.graphics.Paint;
 import android.os.Handler;
 import android.os.Message;
-import android.text.Layout;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
-import android.view.*;
+import android.view.Display;
+import android.view.SurfaceHolder;
+import android.view.SurfaceView;
+import android.view.WindowManager;
 import android.widget.TextView;
-import com.draga.android.spaceTravels.GameDrawable.BlackHole;
-import com.draga.android.spaceTravels.GameDrawable.Explosion;
-import com.draga.android.spaceTravels.GameDrawable.Planet;
-import com.draga.android.spaceTravels.GameDrawable.Planet.PlanetsName;
-import com.draga.android.spaceTravels.GameDrawable.Ship;
+import com.draga.android.spaceTravels.Drawable.Animated.BlackHole;
+import com.draga.android.spaceTravels.Drawable.Animated.Explosion;
+import com.draga.android.spaceTravels.Drawable.Animated.Ship;
+import com.draga.android.spaceTravels.Drawable.Overlay.SpeedBar;
+import com.draga.android.spaceTravels.Drawable.Planet;
+import com.draga.android.spaceTravels.Drawable.Planet.PlanetsName;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -34,37 +34,32 @@ public class SpaceTravelsGame extends SurfaceView implements SurfaceHolder.Callb
     /*
      * Game Physics constants
      */
-    public static final double PHYS_GRAVITATIONAL_CONSTANTS = 2000;
+    public static final double PHYS_GRAVITATIONAL_CONSTANT = 0.001;
     /*
-     * UI constants (i.e. the speed & fuel bars)
+     * UI constants (i.e. the acceleration & fuel bars)
      */
     public static final double UI_DIRECTION_SIZE = 0.85; // from 0 to 1
     public static final int UI_RELATIVE_ARROW_WIDTH = 6;
     public static final int UI_RELATIVE_ARROW_HEIGHT = 10;
     private static final double GAME_PLANET_SCALE = 3;
+    private static final double PHY_ACCELEROMETER_CONSTANT = 0.1;
     //    public static final int UI_ABSOLUTE_X = UI_BAR_SPACING + UI_BAR_HEIGHT / 2;
 //    public static final int UI_ABSOLUTE_Y = UI_ABSOLUTE_X;
     private static List<Planet> planets;
     private static Iterator<Planet> planetIterator;
-    private static WindowManager windowManager;
     /*
      * Canvas and variables
      */
     int canvasHeight = 1;
     int canvasWidth = 1;
-    TwoD TwoD;
-    private Display display;
     private DisplayMetrics displayMetrics;
     /**
      * this is the particle system
      */
     private Ship ship;
     private BlackHole blackHole;
+    private SpeedBar speedBar;
     private Context context;
-    /**
-     * the resource
-     */
-    private Resources resources;
     /**
      * The drawable to use as the background of the animation canvas
      */
@@ -77,16 +72,7 @@ public class SpaceTravelsGame extends SurfaceView implements SurfaceHolder.Callb
      * The thread that actually draws the animation
      */
     private SpaceTravelsThread thread;
-    /*
-     * draw variables
-     */
-    private Paint speedPaint;
-    //    private Path absoluteArrowPath;
-    //private RectF rect;
-//    private Point trianglePoint1 = new Point();
-//    private Point trianglePoint2 = new Point();
-//    private Point trianglePoint3 = new Point();
-//    private Point trianglePoint4 = new Point();
+
     private List<Explosion> explosions;
 
     public SpaceTravelsGame(Context context, AttributeSet attrs) {
@@ -97,7 +83,6 @@ public class SpaceTravelsGame extends SurfaceView implements SurfaceHolder.Callb
         SurfaceHolder holder = getHolder();
         holder.addCallback(this);
 
-        statusText = (TextView) ((Activity) context).findViewById(R.id.message);
         // create thread only; it's started in surfaceCreated()
         thread = new SpaceTravelsThread(holder, this, context, new Handler() {
             @Override
@@ -110,36 +95,22 @@ public class SpaceTravelsGame extends SurfaceView implements SurfaceHolder.Callb
         // Make the game focusable so it can handle events
         setFocusable(true);
         // Get an instance of the WindowManager
-        windowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
-        display = windowManager.getDefaultDisplay();
+        WindowManager windowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+        Display display = windowManager.getDefaultDisplay();
         displayMetrics = new DisplayMetrics();
         display.getMetrics(displayMetrics);
         canvasWidth = displayMetrics.widthPixels;
         canvasHeight = displayMetrics.heightPixels;
 
-        resources = context.getResources();
+        /*
+      the resource
+     */
+        Resources resources = context.getResources();
 
-        // load background image as a Bitmap instead of a GameDrawable b/c
+        // load background image as a Bitmap instead of a Drawable b/c
         // we don't need to transform it and it's faster to draw this way
         backgroundImage = BitmapFactory.decodeResource(resources,
                 R.drawable.background);
-
-        speedPaint = new Paint();
-        speedPaint.setAntiAlias(true);
-        speedPaint.setARGB(255, 0, 255, 0);
-
-        //rect = new RectF(255, 0, 255, 0);
-
-        // fill the path with the points
-//    	absoluteArrowPath = new Path();
-//    	absoluteArrowPath.setFillType(Path.FillType.EVEN_ODD);
-//        absoluteArrowPath.moveTo(trianglePoint1.x,trianglePoint1.y);
-//        absoluteArrowPath.lineTo(trianglePoint2.x,trianglePoint2.y);
-//        absoluteArrowPath.lineTo(trianglePoint3.x,trianglePoint3.y);
-//        absoluteArrowPath.lineTo(trianglePoint4.x,trianglePoint4.y);
-//        absoluteArrowPath.lineTo(trianglePoint1.x,trianglePoint1.y);
-//        absoluteArrowPath.close();
-
     }
 
     void init() {
@@ -149,49 +120,45 @@ public class SpaceTravelsGame extends SurfaceView implements SurfaceHolder.Callb
             switch (planetName) {
                 default:
                 case Earth:
-                    planet = new Planet(new TwoD(canvasWidth * 0.97f, canvasHeight * 0.5f), context.getResources().getDrawable(R.drawable.earth));
+                    planet = new Planet(new Vector2d(canvasWidth * 0.97f, canvasHeight * 0.5f), context.getResources().getDrawable(R.drawable.earth));
                     planet.gravForce = 1;
                     planet.setSize((int) (12.756 * GAME_PLANET_SCALE));
                     break;
                 case Mars:
-                    planet = new Planet(new TwoD(canvasWidth * 0.4f, canvasHeight * 0.85f), context.getResources().getDrawable(R.drawable.mars));
+                    planet = new Planet(new Vector2d(canvasWidth * 0.4f, canvasHeight * 0.85f), context.getResources().getDrawable(R.drawable.mars));
                     planet.gravForce = 0.38f;
                     planet.setSize((int) (12.756 * GAME_PLANET_SCALE));
                     break;
                 case Jupiter:
-                    planet = new Planet(new TwoD(canvasWidth * 0.55f, canvasHeight * 0.35f), context.getResources().getDrawable(R.drawable.jupiter));
+                    planet = new Planet(new Vector2d(canvasWidth * 0.55f, canvasHeight * 0.35f), context.getResources().getDrawable(R.drawable.jupiter));
                     planet.gravForce = 2.54f;
 //				this.size = (int) (142.800 * GAME_PLANET_SCALE);
                     planet.setSize((int) (30 * GAME_PLANET_SCALE));
                     break;
                 case Venus:
-                    planet = new Planet(new TwoD(canvasWidth * 0.7f, canvasHeight * 0.7f), context.getResources().getDrawable(R.drawable.jupiter));
+                    planet = new Planet(new Vector2d(canvasWidth * 0.7f, canvasHeight * 0.7f), context.getResources().getDrawable(R.drawable.jupiter));
                     planet.gravForce = 0.91f;
                     planet.setSize((int) (12.104 * GAME_PLANET_SCALE));
                     break;
             }
             planets.add(planet);
         }
-        ship = new Ship(context, new TwoD(canvasHeight * 0.5, canvasHeight * 0.5));
+
+        ship = new Ship(context, new Vector2d(canvasHeight * 0.5, canvasHeight * 0.5));
+
+        speedBar = new SpeedBar();
 
         explosions = new ArrayList<Explosion>();
-        blackHole = new BlackHole(new TwoD(Math.round(canvasWidth * 0.4), Math.round(canvasHeight * 0.6)), context);
+        blackHole = new BlackHole(new Vector2d(Math.round(canvasWidth * 0.4), Math.round(canvasHeight * 0.6)), context);
     }
 
-    /**
-     * Figures the Ball state (x, y, fuel, ...) based on the passage of
-     * realtime. Does not invalidate(). Called at the start of draw().
-     * Detects the end-of-game and sets the UI to the next state.
-     *
-     * @param elapsed
-     */
     void update(int mode, double elapsed) {
         if (mode == SpaceTravelsThread.STATE_RUNNING) {
-            TwoD = getForceOnShip();
-            TwoD = new TwoD(0, 0);
-            TwoD.x += thread.getSensorX();
-            TwoD.y += thread.getSensorY();
-            ship.update(TwoD, elapsed);
+            Vector2d gravityOnShip = getGravity(ship.position);
+            gravityOnShip.multiply(PHYS_GRAVITATIONAL_CONSTANT);
+            Vector2d accelerometerForce = thread.getSensorForce();
+            accelerometerForce.multiply(PHY_ACCELEROMETER_CONSTANT);
+            ship.update(gravityOnShip, accelerometerForce, elapsed);
             // whether the ship has been lost
             if (shipOutScreen() > 1) {
                 thread.setState(SpaceTravelsThread.STATE_LOSE, getResources().getString(R.string.lost_lostShip));
@@ -201,9 +168,8 @@ public class SpaceTravelsGame extends SurfaceView implements SurfaceHolder.Callb
             planetIterator = planets.iterator();
             while (planetIterator.hasNext()) {
                 Planet planet = planetIterator.next();
-                TwoD collisionPoint = isShipCollided(planet);
-                if (collisionPoint != null) {
-                    explosions.add(new Explosion(context, collisionPoint));
+                if (isShipCollided(planet) != null) {
+                    explosions.add(new Explosion(context, ship.position));
                 }
             }
             if (isShipCaught(blackHole)) {
@@ -211,15 +177,18 @@ public class SpaceTravelsGame extends SurfaceView implements SurfaceHolder.Callb
                 thread.setState(SpaceTravelsThread.STATE_LOSE, getResources().getString(R.string.lost_blackHole));
             }
         }
-        for (int i = 0; i < explosions.size(); ) {
+        blackHole.update(elapsed);
+        ArrayList<Explosion> exaustedExplosions = new ArrayList<Explosion>();
+        for (int i = 0; i < explosions.size(); i++) {
             if (explosions.get(i).isAnimating()) {
                 explosions.get(i).update();
-                i++;
             } else {
-                explosions.remove(i);
+                exaustedExplosions.add(explosions.get(i));
             }
         }
-        blackHole.update(elapsed);
+        for (int i = 0; i < exaustedExplosions.size(); i++) {
+            explosions.remove(exaustedExplosions.get(i));
+        }
     }
 
     /**
@@ -239,34 +208,11 @@ public class SpaceTravelsGame extends SurfaceView implements SurfaceHolder.Callb
 
         ship.draw(canvas, displayMetrics.density);
 
-        for (int i = 0; i < explosions.size(); ) {
+        speedBar.draw(ship, canvas, displayMetrics.density);
+
+        for (int i = 0; i < explosions.size(); i++) {
             explosions.get(i).draw(canvas, displayMetrics.density);
         }
-
-        /*
-         * draw a white triangle pointing to the direction the ship is going
-         */
-        // set the color, the faster the reddish, the slower the greenish
-//        double shipSpeedRatio = ship.getSpeed() / Ship.PHYS_SPEED_MAX;
-//        directionPaint.setARGB(255,
-//                (int) (255 * shipSpeedRatio),
-//                (int) (255 * (1 - shipSpeedRatio)),
-//                0);
-//
-//        //determine the rotation to make it point towards the ship
-//        double shipVelocityX = ship.getVelocityX();
-//        double shipVelocityY = ship.getVelocityY();
-//        double combinedVelocity = Math.sqrt(shipVelocityX * shipVelocityX
-//                + shipVelocityY * shipVelocityY);
-//        double normalizedshipVelocityX = shipVelocityX / combinedVelocity;
-//        double normalizedshipVelocityY = -shipVelocityY / combinedVelocity;
-//        double directionRotation = Math.toDegrees(Math.atan2(normalizedshipVelocityX * Math.PI,
-//                normalizedshipVelocityY * Math.PI));
-//        // draw the triangle with its current rotation
-//        canvas.save();
-//        canvas.rotate((double) directionRotation, UI_ABSOLUTE_X, UI_ABSOLUTE_Y);
-//        canvas.drawPath(absoluteArrowPath, directionPaint);
-//        canvas.restore();
 
 
         /*
@@ -366,9 +312,9 @@ public class SpaceTravelsGame extends SurfaceView implements SurfaceHolder.Callb
         return false;
     }
 
-    public TwoD isShipCollided(Planet planet) {
-        double distanceX = 0,
-                distanceY = 0,
+    public Vector2d isShipCollided(Planet planet) {
+        double distanceX,
+                distanceY,
                 distance,
                 shipX = ship.position.x,
                 shipY = ship.position.y,
@@ -381,27 +327,27 @@ public class SpaceTravelsGame extends SurfaceView implements SurfaceHolder.Callb
                 < (size + planet.getSize()) / 2) { //and the game is running
             // if it's the earth ...
             if (planet.name == Planet.PlanetsName.Earth) {
-                // and the speed is low enough the game is won
-                if (ship.speed <= GAME_MAX_LANDING_SPEED) {
+                // and the acceleration is low enough the game is won
+                if (ship.acceleration.toLinear() <= GAME_MAX_LANDING_SPEED) {
                     ship.setLanding(distanceX, distanceY);
                     thread.setState(SpaceTravelsThread.STATE_WIN,
                             "You have landed the ship!\n"
-//                                    + "Speed: " + Math.round(ship.getSpeed()) + "\n"
+                                    + "Speed: " + Math.round(ship.acceleration.toLinear()) + "\n"
                                     + " Goal:" + GAME_MAX_LANDING_SPEED);
                     return null;
                 } else {
-                    ((SpaceTravelsThread) thread).setState(SpaceTravelsThread.STATE_LOSE,
+                    thread.setState(SpaceTravelsThread.STATE_LOSE,
                             "You have landed too fast!\n"
-//                                    + "Speed: " + Math.round(ship.getSpeed()) + "\n"
+                                    + "Speed: " + Math.round(ship.acceleration.toLinear()) + "\n"
                                     + " Goal:" + GAME_MAX_LANDING_SPEED);
-                    TwoD point = new TwoD((int) Math.round(planet.position.x - (planet.getSize() / 2 * distanceX / distance)),
+                    Vector2d point = new Vector2d((int) Math.round(planet.position.x - (planet.getSize() / 2 * distanceX / distance)),
                             (int) Math.round(planet.position.y - (planet.getSize() / 2 * distanceY / distance)));
                     return point;
                 }
             } else {
-                ((SpaceTravelsThread) thread).setState(SpaceTravelsThread.STATE_LOSE,
+                thread.setState(SpaceTravelsThread.STATE_LOSE,
                         "You have crashed into a planet!");
-                TwoD point = new TwoD((int) Math.round(planet.position.x - (planet.getSize() / 2 * distanceX / distance)),
+                Vector2d point = new Vector2d((int) Math.round(planet.position.x - (planet.getSize() / 2 * distanceX / distance)),
                         (int) Math.round(planet.position.y - (planet.getSize() / 2 * distanceY / distance)));
                 return point;
             }
@@ -413,7 +359,7 @@ public class SpaceTravelsGame extends SurfaceView implements SurfaceHolder.Callb
      * Return 0 if not, a value from 0 to 1 if true and in range,
      * over 1 if it is over the maximum distance (game lost).
      * The returned value is the distance ration between the
-     * actual and the maximum (for wich the game is lost)
+     * actual and the maximum (for which the game is lost)
      */
     public double shipOutScreen() {
         // Split the possible position outside the screen in 9
@@ -447,43 +393,41 @@ public class SpaceTravelsGame extends SurfaceView implements SurfaceHolder.Callb
             return 0;
     }
 
-    public TwoD getForceOnShip() {
+    public Vector2d getGravity(Vector2d position) {
         planetIterator = planets.iterator();
-        double distanceX = 0,
-                distanceY = 0,
-                TwoD = 0,
-                forceX = 0,
-                forceY = 0;
+        double linearForce;
+        Vector2d force = new Vector2d(),
+                distance = new Vector2d();
         Planet planet;
 
-        // planets TwoD
+        // planets Vector2d
         while (planetIterator.hasNext()) {
             planet = planetIterator.next();
-            distanceX = planet.position.x - ship.position.x;
-            distanceY = planet.position.y - ship.position.y;
+            distance.x = planet.position.x - position.x;
+            distance.y = planet.position.y - position.y;
             /*
-             *  gravitation TwoD is
+             *  gravitation Vector2d is
 			 *  gravitational_constant * first_mass * second_mass / distance ^ 2
-			 *  as the ship mass is always 1 i dont consider it
+			 *  as the ship mass is always 1 I don't consider it
 			 */
             // TODO avoid division by 0
-            TwoD = PHYS_GRAVITATIONAL_CONSTANTS
+            linearForce = PHYS_GRAVITATIONAL_CONSTANT
                     * planet.gravForce
-                    / Math.sqrt(distanceX * distanceX + distanceY * distanceY);
-            forceX += TwoD * distanceX / (Math.abs(distanceX) + Math.abs(distanceY));
-            forceY += TwoD * distanceY / (Math.abs(distanceX) + Math.abs(distanceY));
+                    / force.toLinear();
+            force.x += linearForce * force.x / (Math.abs(force.x) + Math.abs(force.y));
+            force.y += linearForce * force.y / (Math.abs(force.x) + Math.abs(force.y));
         }
 
-        //black hole TwoD
-        distanceX = blackHole.position.x - ship.position.x;
-        distanceY = blackHole.position.x - ship.position.y;
-        TwoD = PHYS_GRAVITATIONAL_CONSTANTS
+        //black hole force
+        force.x = blackHole.position.x - position.x;
+        force.y = blackHole.position.x - position.y;
+        linearForce = PHYS_GRAVITATIONAL_CONSTANT
                 * blackHole.gravForce
-                / Math.sqrt(distanceX * distanceX + distanceY * distanceY);
-        forceX += TwoD * distanceX / (Math.abs(distanceX) + Math.abs(distanceY));
-        forceY += TwoD * distanceY / (Math.abs(distanceX) + Math.abs(distanceY));
+                / force.toLinear();
+        force.x += linearForce * force.x / (Math.abs(force.x) + Math.abs(force.y));
+        force.y += linearForce * force.y / (Math.abs(force.x) + Math.abs(force.y));
 
-        return new TwoD(forceX, forceY);
+        return force;
     }
 
     /**
@@ -542,5 +486,9 @@ public class SpaceTravelsGame extends SurfaceView implements SurfaceHolder.Callb
                                int height) {
         // TODO Auto-generated method stub
 
+    }
+
+    public void setMessageView(TextView message) {
+        statusText = message;
     }
 }

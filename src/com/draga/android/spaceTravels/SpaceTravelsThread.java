@@ -34,6 +34,7 @@ public class SpaceTravelsThread extends Thread implements SensorEventListener {
     public static final int STATE_READY = 4;
     public static final int STATE_RUNNING = 5;
     public static final int STATE_WIN = 6;
+    public static final int STATE_ERROR = 7;
     public static final int STATE_ANIMANTING_LANDING = 7;
     /*
      * Game graphics constants
@@ -202,6 +203,8 @@ public class SpaceTravelsThread extends Thread implements SensorEventListener {
                 }
             } catch (Exception e) {
                 System.err.print(e.getMessage());
+                spaceTravelsGame.getThread().setState(STATE_ERROR);
+                running = false;
             } finally {
                 // do this in a finally so that if an exception is thrown
                 // during the above, we don't leave the Surface in an
@@ -278,6 +281,9 @@ public class SpaceTravelsThread extends Thread implements SensorEventListener {
                         break;
                     case STATE_LOSE:
                         str = res.getText(R.string.mode_lose);
+                        break;
+                    case STATE_ERROR:
+                        str = res.getText(R.string.mode_error);
                         break;
                     case STATE_WIN:
                         double gameTime = SystemClock.uptimeMillis();
@@ -359,6 +365,10 @@ public class SpaceTravelsThread extends Thread implements SensorEventListener {
                 sensorY = -event.values[0];
                 break;
         }
+    }
+
+    public Vector2d getSensorForce() {
+        return new Vector2d(sensorX, sensorY);
     }
 
     /**

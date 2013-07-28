@@ -1,10 +1,11 @@
-package com.draga.android.spaceTravels.GameDrawable;
+package com.draga.android.spaceTravels.Drawable;
 
 import android.app.Activity;
 import android.content.Context;
 import android.os.Bundle;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -31,7 +32,12 @@ public class SpaceTravels extends Activity {
 
         // tell system to use the layout defined in our XML file
         setContentView(R.layout.game);
-        spaceTravelsGame = (SpaceTravelsGame) findViewById(R.id.spaceTravelsGame);
+
+
+        SpaceTravelsGame spaceTravelsGame = (SpaceTravelsGame) findViewById(R.id.spaceTravelsGame);
+        TextView messageView = (TextView) findViewById(R.id.message);
+        spaceTravelsGame.setMessageView(messageView);
+
         thread = spaceTravelsGame.getThread();
 
         // give the LunarView a handle to the TextView used for messages
@@ -42,26 +48,15 @@ public class SpaceTravels extends Activity {
         // Create a bright wake lock
         wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, getClass()
                 .getName());
-        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
-                WindowManager.LayoutParams.FLAG_FULLSCREEN);
-
-        // get handles to the BallView from XML, and its BallThread
-        /*mBallView = (BallGame) findViewById(R.id.ball);
-        mBallThread = mBallView.getThread();
-
-        // give the BallView a handle to the TextView used for messages
-        mBallView.setTextView((TextView) findViewById(R.id.text));
-
-        if (savedInstanceState == null) {
-            // we were just launched: set up a new game
-            mBallThread.setState(BallThread.STATE_READY);
-            Log.w(this.getClass().getName(), "SIS is null");
-        } else {
-            // we are being restored: resume a previous game
-            mBallThread.restoreState(savedInstanceState);
-            Log.w(this.getClass().getName(), "SIS is nonnull");
-        }
-        mBallThread.doStart();*/
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON,
+                WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON,
+                WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
+        wakeLock.acquire();
+//        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
+//                WindowManager.LayoutParams.FLAG_FULLSCREEN);
+//        getWindow().setFlags(WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON,
+//                WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
 
         thread.doStart();
     }
@@ -104,8 +99,9 @@ public class SpaceTravels extends Activity {
             case R.id.resume:
                 thread.unpause();
                 return true;
+            default:
+                return super.onOptionsItemSelected(item);
         }
-        return false;
     }
 
     @Override
@@ -150,11 +146,11 @@ public class SpaceTravels extends Activity {
      *
      * @param outState a Bundle into which this Activity should save its state
      */
-    /*@Override
+    @Override
     protected void onSaveInstanceState(Bundle outState) {
         // just have the View's thread save its state into our Bundle
         super.onSaveInstanceState(outState);
-        //mBallThread.saveState(outState);
+        thread.saveState(outState);
         Log.w(this.getClass().getName(), "SIS called");
-    }*/
+    }
 }

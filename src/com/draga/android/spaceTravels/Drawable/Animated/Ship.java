@@ -1,28 +1,29 @@
 /**
  *
  */
-package com.draga.android.spaceTravels.GameDrawable;
+package com.draga.android.spaceTravels.Drawable.Animated;
 
 import android.content.Context;
 import android.graphics.Canvas;
-import com.draga.android.spaceTravels.TwoD;
+import android.graphics.drawable.AnimationDrawable;
 import com.draga.android.spaceTravels.R;
+import com.draga.android.spaceTravels.Vector2d;
 
 /**
  * @author Draga
  */
-public class Ship extends GameDrawable {
+public class Ship extends GameAnimated {
     /*
      * Physics constants
      */
-    public static final double PHYS_ACCEL_SEC = 2 * 9.8;
-    public static final int PHYS_MAX_SPEED = 150;
+    public static final double PHYS_ACCEL_SEC = 15;
+    public static final int PHYS_MAX_SPEED = 3;
     public static final double PHYS_PULL_FORCE = 2;
     public static final double PHYS_PULL_EXPONENTIAL = 1;
     public static final double PHYS_MIN_ACCEL = 0.1;
     public static final double SHIP_HEIGHT = 48;
     public static final double SHIP_WIDTH = 36;
-    public static final double SHIP_TURN_SPEED = 0.1;
+    public static final double SHIP_TURN_SPEED = 0.5;
     /*
      * Game constants
      */
@@ -35,38 +36,34 @@ public class Ship extends GameDrawable {
     private double landingX,
             landingY,
             remainingLandingTime;
-    private TwoD oldAccelleration;
-    public double speed;
+    private Flame flame;
 
-    public Ship(Context context, TwoD position) {
+    public Ship(Context context, Vector2d position) {
         super(position, context.getResources().getDrawable(
                 R.drawable.spaceship));
         width = SHIP_WIDTH;
         height = SHIP_HEIGHT;
+        speedMultiplier = PHYS_ACCEL_SEC;
         maxSpeed = PHYS_MAX_SPEED;
-        oldAccelleration = new TwoD(0,0);
+        flame = new Flame(position, (AnimationDrawable) context.getResources().getDrawable(R.drawable.flame));
     }
 
-    public void update(TwoD TwoD, double elapsed) {
-        speed = getSpeed(TwoD);
-        super.Update(TwoD, elapsed);
-        if (!isLanding) {
-            // figure speeds for the end of the period
-            TwoD acceleration = new TwoD(TwoD.x * elapsed, TwoD.y * elapsed);
-            move(acceleration);
+    public void update(Vector2d acceleration, Vector2d accelerometer, double elapsed) {
+        flame.update(this, accelerometer, elapsed);
 
+        if (!isLanding) {
+            Vector2d totalAcceleration = acceleration.copy();
+            totalAcceleration.add(accelerometer);
+
+            super.update(totalAcceleration, elapsed);
 
             // Calculate the rotation of the ship
-            double distance = getSpeed(acceleration);
-            acceleration.x *= (1 - SHIP_TURN_SPEED) * oldAccelleration.x + SHIP_TURN_SPEED;
-            acceleration.y *= (1 - SHIP_TURN_SPEED) * oldAccelleration.y + SHIP_TURN_SPEED;
-            double normalizedAccelX = -acceleration.x / distance;
-            double normalizedAccelY = -acceleration.y / distance;
+//            Vector2d temp = new Vector2d((1 - SHIP_TURN_SPEED) * rotation.x + SHIP_TURN_SPEED * accelerometer.x,
+//                    -((1 - SHIP_TURN_SPEED) * rotation.y + SHIP_TURN_SPEED * accelerometer.y));
+//            temp.normalize();
             // calculate the rotation base on the accelerometer
-            rotation = Math.toDegrees(Math.atan2(normalizedAccelX * Math.PI,
-                    normalizedAccelY * Math.PI));
-            oldAccelleration.x = acceleration.x;
-            oldAccelleration.y = acceleration.y;
+//            Math.toDegrees(Math.atan2(temp.x * Math.PI, temp.y * Math.PI))
+            rotation = Math.toDegrees(Math.atan2(accelerometer.x * Math.PI, -accelerometer.y * Math.PI));
         } else {
             remainingLandingTime -= elapsed;
             if (remainingLandingTime > 0) {
@@ -79,12 +76,9 @@ public class Ship extends GameDrawable {
         }
     }
 
-    public void Draw(Canvas canvas, double density) {
-        // draw the ship with its current rotation
-        canvas.save();
-        canvas.rotate((float)rotation, (float)position.x, (float)position.x);
+    public void draw(Canvas canvas, double density) {
         super.draw(canvas, density);
-        canvas.restore();
+        flame.draw(canvas, density);
     }
 
     public void setLanding(double _landingX, double _landingY) {

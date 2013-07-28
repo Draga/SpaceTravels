@@ -19,6 +19,7 @@
     <string name="level_prompt">Choose a level</string>
     <string name="lost_blackHole">You have been caught by a black hole!</string>
     <string name="lost_lostShip">You have lost the ship!</string>
+    <string name="mode_error">ERROR</string>
     <string-array name="levels_array">
         <item>Level 1</item>
         <item>Level 2</item>

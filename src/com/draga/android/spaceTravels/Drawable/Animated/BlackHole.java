@@ -1,12 +1,13 @@
 /**
  *
  */
-package com.draga.android.spaceTravels.GameDrawable;
+package com.draga.android.spaceTravels.Drawable.Animated;
 
 import android.content.Context;
 import android.graphics.Canvas;
+import com.draga.android.spaceTravels.Drawable.GameDrawable;
 import com.draga.android.spaceTravels.R;
-import com.draga.android.spaceTravels.TwoD;
+import com.draga.android.spaceTravels.Vector2d;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,25 +27,23 @@ public class BlackHole extends GameDrawable {
     private List<Double> rotationList;
 
 
-    public BlackHole(TwoD position, Context context) {
+    public BlackHole(Vector2d position, Context context) {
         super(position, context.getResources().getDrawable(
                 R.drawable.blackhole));
 
         gravForce = PHYS_BLACKHOLE_GRAV_FORCE;
         setSize(PHYS_BLACKHOLE_SIZE);
         rotationList = new ArrayList<Double>();
-        for (int i = 0; i < PHYS_RINGS; i++)
-            rotationList.add(0d);
+        for (double i = 0; i < PHYS_RINGS; i++)
+            rotationList.add(i);
     }
 
     public void draw(Canvas canvas, double density) {
         double tmpSize = getSize();
         for (int i = 0; i < rotationList.size(); i++) {
             canvas.save();
-            canvas.rotate(rotationList.get(i).floatValue(), (float) position.x, (float) position.y);
-            int xLeft = (int) (position.x - tmpSize / 2);
-            int yTop = (int) (position.y - tmpSize / 2);
-            image.setBounds(xLeft, yTop, (int) (xLeft + tmpSize), (int) (yTop + tmpSize));
+            float rotation = rotationList.get(i).floatValue();
+            canvas.rotate(rotation, (float) position.x, (float) position.y);
             super.draw(canvas, density);
             canvas.restore();
             tmpSize -= getSize() / PHYS_RINGS;
@@ -57,13 +56,13 @@ public class BlackHole extends GameDrawable {
         for (int i = 0; i < rotationList.size(); i++) {
             rotation = rotationList.get(i) + elapsedRotation;
             if (rotation > 360)
-                rotation -= 360;
+                rotation %= 360;
             rotationList.set(i, rotation);
             elapsedRotation *= PHYS_INNER_RING_ROTATION;
         }
     }
 
-    public boolean isCaught(TwoD position) {
+    public boolean isCaught(Vector2d position) {
         double distanceX = position.x - this.position.x,
                 distanceY = position.y - this.position.y;
         if (Math.sqrt(distanceX * distanceX + distanceY * distanceY)
